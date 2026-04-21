@@ -28,6 +28,8 @@ These constraints must be baked into the final prompt without asking the user �
 2. **Mono-repo** — front-end and back-end must live in one repository (no split repos)
 3. **Avoid unnecessary build steps** — prefer technologies that can run without a build pipeline; if a build is unavoidable, proceed but justify it
 4. **Production-grade from day one** — structure should support future scaling even if MVP is small
+5. **README.md file** — ALWAYS create a README.md file where we will explain the code folder structure neatly and nicely
+6. **Installation file** — ALWAYS create an INSTALLATION.md file where we will list down all the steps user is required to install and run the project on any machine
 
 ---
 
