@@ -1,0 +1,31 @@
+{
+  "app": { "name": "Acme Admin", "baseUrl": "https://staging.acme.test" },
+  "repoPath": "/Users/varun/code/acme-web",
+  "outputDir": "./qa-exploration",
+  "environment": {
+    "name": "staging",
+    "isProduction": false,
+    "nonProdAllowlist": ["staging.acme.test", "localhost", "127.0.0.1", "*.acme.test"]
+  },
+  "mutationMode": "safe",
+  "roles": [
+    { "name": "admin",  "isPrimary": true,  "mcpServer": "playwright-admin",  "profileDir": "./.profiles/admin" },
+    { "name": "member", "isPrimary": false, "mcpServer": "playwright-member", "profileDir": "./.profiles/member" },
+    { "name": "guest",  "isPrimary": false, "mcpServer": null, "profileDir": null, "public": true }
+  ],
+  "denylist": {
+    "urlPatterns": ["*/logout", "*/billing/pay", "https://*.stripe.com/*"],
+    "buttonLabels": ["Delete account", "Deactivate", "Pay now", "Send invites"]
+  },
+  "categories": {
+    "functional": true, "ui": true, "negative": true, "boundary": true, "flakiness": true,
+    "accessibility": true, "security": true, "performance": true, "responsive": true,
+    "state-navigation": true, "usability": true, "network-failure": true, "localization": false
+  },
+  "gherkin": false,
+  "crawl": { "maxDepth": 4, "sameOriginOnly": true },
+  "interactionBudgetPerPage": 150,
+  "viewport": { "desktop": "1440x900", "mobile": "390x844" },
+  "security": { "rateLimitProbes": false },
+  "calibration": { "minPriority": "P3", "maxTestsPerPage": null, "inferredBugStance": "flag" }
+}

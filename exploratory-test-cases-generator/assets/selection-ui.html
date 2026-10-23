@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Select pages to explore</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel-2: #1f232c; --line: #2b313c;
+    --text: #e8eaed; --muted: #9aa3b2; --accent: #6ea8fe; --accent-2: #2b6cb0;
+    --ok: #4ade80; --warn: #fbbf24; --pill: #252b36;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg:#f6f7f9; --panel:#fff; --panel-2:#f0f2f5; --line:#e2e6ec;
+      --text:#1a1d23; --muted:#5b6472; --accent:#2b6cb0; --accent-2:#2b6cb0;
+      --ok:#15803d; --warn:#b45309; --pill:#eef1f5;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+         background:var(--bg); color:var(--text); }
+  header { position:sticky; top:0; z-index:5; background:var(--panel); border-bottom:1px solid var(--line);
+           padding:14px 20px; }
+  h1 { font-size:18px; margin:0 0 2px; }
+  .sub { color:var(--muted); font-size:13px; }
+  .wrap { max-width:1040px; margin:0 auto; padding:16px 20px 160px; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:10px; }
+  input[type=search] { background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+                       border-radius:8px; padding:8px 10px; min-width:220px; }
+  .btn { background:var(--panel-2); border:1px solid var(--line); color:var(--text); border-radius:8px;
+         padding:7px 12px; cursor:pointer; }
+  .btn:hover { border-color:var(--accent); }
+  .group { background:var(--panel); border:1px solid var(--line); border-radius:12px; margin:12px 0;
+           overflow:hidden; }
+  .group-head { display:flex; align-items:center; gap:12px; padding:12px 14px; cursor:pointer;
+                background:var(--panel); }
+  .group-head:hover { background:var(--panel-2); }
+  .group-title { font-weight:600; font-size:15px; }
+  .group-meta { color:var(--muted); font-size:12.5px; margin-left:auto; text-align:right; white-space:nowrap; }
+  .chev { transition:transform .15s; color:var(--muted); }
+  .group.open .chev { transform:rotate(90deg); }
+  .pages { display:none; border-top:1px solid var(--line); }
+  .group.open .pages { display:block; }
+  .page { display:flex; align-items:flex-start; gap:12px; padding:10px 14px 10px 40px;
+          border-top:1px solid var(--line); }
+  .page:first-child { border-top:none; }
+  .page:hover { background:var(--panel-2); }
+  .page-main { min-width:0; }
+  .page-title { font-weight:500; }
+  .page-url { color:var(--muted); font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12.5px;
+              word-break:break-all; }
+  .pills { display:flex; flex-wrap:wrap; gap:6px; margin-top:5px; }
+  .pill { background:var(--pill); color:var(--muted); border-radius:999px; padding:2px 9px; font-size:11.5px; }
+  .pill.role { color:var(--accent); }
+  .page-est { color:var(--muted); font-size:12px; margin-left:auto; text-align:right; white-space:nowrap; }
+  input[type=checkbox] { width:17px; height:17px; accent-color:var(--accent); margin-top:2px; cursor:pointer; }
+  .runbar { position:fixed; left:0; right:0; bottom:0; background:var(--panel); border-top:1px solid var(--line);
+            padding:12px 20px; z-index:6; }
+  .runbar-inner { max-width:1040px; margin:0 auto; display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
+  .runopt { display:flex; flex-direction:column; gap:4px; }
+  .runopt label { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  select, .chips { background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+                   border-radius:8px; padding:7px 10px; }
+  .chips { display:flex; gap:6px; }
+  .chip { padding:3px 10px; border-radius:999px; border:1px solid var(--line); cursor:pointer; font-size:12.5px; }
+  .chip.on { background:var(--accent-2); color:#fff; border-color:var(--accent-2); }
+  .total { margin-left:auto; text-align:right; }
+  .total .big { font-size:16px; font-weight:600; }
+  .confirm { background:var(--accent-2); color:#fff; border:none; border-radius:10px; padding:11px 20px;
+             font-size:15px; font-weight:600; cursor:pointer; }
+  .confirm:disabled { opacity:.5; cursor:not-allowed; }
+  #done { display:none; padding:14px; margin-top:14px; border:1px solid var(--ok); border-radius:10px;
+          color:var(--ok); background:color-mix(in srgb, var(--ok) 12%, transparent); }
+  pre#qa-selection-output { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Select pages to explore</h1>
+  <div class="sub">Tick the groups and pages you want covered, set the run options at the bottom, then Confirm.</div>
+  <div class="controls">
+    <input type="search" id="filter" placeholder="Filter pages…" />
+    <button class="btn" id="selAll">Select all</button>
+    <button class="btn" id="selNone">Select none</button>
+    <button class="btn" id="expandAll">Expand all</button>
+    <button class="btn" id="collapseAll">Collapse all</button>
+  </div>
+</header>
+
+<div class="wrap" id="groups"></div>
+
+<div class="runbar">
+  <div class="runbar-inner">
+    <div class="runopt">
+      <label>Data mutation mode</label>
+      <select id="mutation">
+        <option value="readonly">Read-only (never submit)</option>
+        <option value="safe" selected>Safe (QA_AUTO_ data, no delete/pay/send)</option>
+        <option value="full">Full (disposable environment)</option>
+      </select>
+    </div>
+    <div class="runopt">
+      <label>Roles to include</label>
+      <div class="chips" id="roles"></div>
+    </div>
+    <div class="total">
+      <div class="big"><span id="pageCount">0</span> pages · ~<span id="testCount">0</span> tests</div>
+      <div class="sub">est. run ~<span id="runTime">0</span> min</div>
+    </div>
+    <button class="confirm" id="confirm" disabled>Confirm &amp; start</button>
+  </div>
+</div>
+
+<div class="wrap" style="padding-top:0"><div id="done">Selection confirmed — you can return to the chat. Exploration is starting.</div></div>
+
+<pre id="qa-selection-output"></pre>
+
+<script>
+// The data token below is replaced by build_selection_ui.mjs with { groups:[...], roles:[...] }.
+const DATA = __QA_DATA__;
+
+// ---- test-count heuristic (rough, just for the running estimate) --------------------------------
+function estTests(p) {
+  const c = p.complexity || {};
+  const base = 8;
+  return base + (c.forms||0)*9 + (c.tables||0)*6 + (c.modals||0)*5 + Math.ceil((c.interactiveControls||0)/4);
+}
+const MIN_PER_TEST = 0.4; // rough manual-minutes-equivalent for the run-time estimate
+
+const state = { // pageId -> included
+  pages: {},
+  roles: new Set((DATA.roles||[]).map(r => r.name)),
+};
+DATA.groups.forEach(g => g.pages.forEach(p => { state.pages[p.id] = true; p._est = estTests(p); }));
+
+const groupsEl = document.getElementById('groups');
+
+function pageRow(p) {
+  const roles = (p.visibleToRoles||[]).map(r => `<span class="pill role">${r}</span>`).join('');
+  const found = (p.discoveredBy||[]).map(s => `<span class="pill">${s}</span>`).join('');
+  const c = p.complexity||{};
+  const cx = `<span class="pill">${c.forms||0} forms</span><span class="pill">${c.tables||0} tables</span><span class="pill">${c.modals||0} modals</span>`;
+  return `<div class="page" data-page="${p.id}" data-search="${(p.title+' '+p.url).toLowerCase()}">
+    <input type="checkbox" class="pg" data-page="${p.id}" checked />
+    <div class="page-main">
+      <div class="page-title">${p.title||p.id}</div>
+      <div class="page-url">${p.url}${p.routeTemplate && p.routeTemplate!==p.url ? '  ·  '+p.routeTemplate : ''}</div>
+      <div class="pills">${roles}${found}${cx}</div>
+    </div>
+    <div class="page-est">~${p._est} tests</div>
+  </div>`;
+}
+
+function groupBlock(g) {
+  const count = g.pages.length;
+  const tests = g.pages.reduce((a,p)=>a+p._est,0);
+  const roles = [...new Set(g.pages.flatMap(p=>p.visibleToRoles||[]))].join(', ');
+  return `<div class="group open" data-group="${g.name}">
+    <div class="group-head">
+      <input type="checkbox" class="gp" data-group="${g.name}" checked />
+      <span class="chev">▶</span>
+      <span class="group-title">${g.name}</span>
+      <span class="group-meta">${count} page${count!==1?'s':''} · ~${tests} tests${roles?' · '+roles:''}</span>
+    </div>
+    <div class="pages">${g.pages.map(pageRow).join('')}</div>
+  </div>`;
+}
+
+groupsEl.innerHTML = DATA.groups.map(groupBlock).join('');
+
+// roles chips
+const rolesEl = document.getElementById('roles');
+(DATA.roles||[]).forEach(r => {
+  const el = document.createElement('div');
+  el.className = 'chip on'; el.textContent = r.name + (r.isPrimary?' ★':''); el.dataset.role = r.name;
+  el.onclick = () => { el.classList.toggle('on');
+    if (el.classList.contains('on')) state.roles.add(r.name); else state.roles.delete(r.name); };
+  rolesEl.appendChild(el);
+});
+
+function recompute() {
+  let pages=0, tests=0;
+  DATA.groups.forEach(g => g.pages.forEach(p => { if (state.pages[p.id]) { pages++; tests += p._est; } }));
+  document.getElementById('pageCount').textContent = pages;
+  document.getElementById('testCount').textContent = tests;
+  document.getElementById('runTime').textContent = Math.max(1, Math.round(tests*MIN_PER_TEST));
+  document.getElementById('confirm').disabled = pages===0;
+}
+
+// events
+document.addEventListener('change', e => {
+  if (e.target.classList.contains('pg')) {
+    state.pages[e.target.dataset.page] = e.target.checked; syncGroupBoxes();
+  } else if (e.target.classList.contains('gp')) {
+    const g = e.target.dataset.group;
+    document.querySelectorAll(`.page[data-group]`); // noop
+    DATA.groups.find(x=>x.name===g).pages.forEach(p => {
+      state.pages[p.id] = e.target.checked;
+      const box = document.querySelector(`.pg[data-page="${p.id}"]`); if (box) box.checked = e.target.checked;
+    });
+  }
+  recompute();
+});
+function syncGroupBoxes() {
+  DATA.groups.forEach(g => {
+    const box = document.querySelector(`.gp[data-group="${g.name}"]`);
+    const all = g.pages.every(p => state.pages[p.id]);
+    const none = g.pages.every(p => !state.pages[p.id]);
+    if (box) { box.checked = all; box.indeterminate = !all && !none; }
+  });
+}
+document.querySelectorAll('.group-head').forEach(h => h.addEventListener('click', e => {
+  if (e.target.tagName === 'INPUT') return;
+  h.parentElement.classList.toggle('open');
+}));
+document.getElementById('selAll').onclick = () => setAll(true);
+document.getElementById('selNone').onclick = () => setAll(false);
+function setAll(v){ DATA.groups.forEach(g=>g.pages.forEach(p=>{state.pages[p.id]=v;}));
+  document.querySelectorAll('.pg').forEach(b=>b.checked=v); syncGroupBoxes(); recompute(); }
+document.getElementById('expandAll').onclick = () => document.querySelectorAll('.group').forEach(g=>g.classList.add('open'));
+document.getElementById('collapseAll').onclick = () => document.querySelectorAll('.group').forEach(g=>g.classList.remove('open'));
+document.getElementById('filter').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('.page').forEach(row => {
+    row.style.display = !q || row.dataset.search.includes(q) ? '' : 'none';
+  });
+});
+
+document.getElementById('confirm').onclick = () => {
+  const selected = [];
+  DATA.groups.forEach(g => g.pages.forEach(p => { if (state.pages[p.id]) selected.push(p.id); }));
+  const out = {
+    confirmed: true,
+    confirmedAt: new Date().toISOString(),
+    selectedPageIds: selected,
+    excludedPageIds: Object.keys(state.pages).filter(id => !state.pages[id]),
+    mutationMode: document.getElementById('mutation').value,
+    roles: [...state.roles],
+  };
+  window.__QA_SELECTION__ = out;                       // read back via browser_evaluate
+  const pre = document.getElementById('qa-selection-output');
+  pre.textContent = JSON.stringify(out, null, 2);
+  pre.style.display = 'block';
+  document.getElementById('done').style.display = 'block';
+  document.getElementById('confirm').textContent = 'Confirmed ✓';
+  document.getElementById('confirm').disabled = true;
+};
+
+recompute(); syncGroupBoxes();
+</script>
+</body>
+</html>
